@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shooter Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    #canvas {
+      background-color: #000;
+    }
+
+    .bullet {
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      background-color: #fff;
+      border-radius: 50%;
+    }
+
+    .enemy {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: #f00;
+      border-radius: 50%;
+    }
+    #score {
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="score">Điểm số: 0</div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: 20
+    };
+
+    let bullets = [];
+    let enemies = [];
+    let score = 0;
+
+    function update() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw player
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+
+      // Update and draw bullets
+      for (let i = 0; i < bullets.length; i++) {
+        const bullet = bullets[i];
+        bullet.x += bullet.dx;
+        bullet.y += bullet.dy;
+
+        // Remove bullet if it goes off-screen
+        if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+          bullets.splice(i, 1);
+          continue;
+        }
+
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+      }
+
+      // Update and draw enemies
+      for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+        enemy.x += enemy.dx;
+        enemy.y += enemy.dy;
+
+        // Remove enemy if it goes off-screen
+        if (enemy.x < 0 || enemy.x > canvas.width || enemy.y < 0 || enemy.y > canvas.height) {
+          enemies.splice(i, 1);
+          continue;
+        }
+
+        // Check collision with bullets
+        for (let j = 0; j < bullets.length; j++) {
+          const bullet = bullets[j];
+          if (checkCollision(bullet, enemy)) {
+            enemies.splice(i, 1);
+            bullets.splice(j, 1);
+            score++;
+            document.title = `Shooter Game - Điểm số: ${score}`;
+            break;
+          }
+        }
+
+        // Draw enemy
+        ctx.fillStyle = '#f00';
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+      }
+
+      // Create new enemies
+      if (Math.random() < 0.05) {
+        const side = Math.random() < 0.5 ? 'left' : 'right';
+        let x, y;
+        if (side === 'left') {
+          x = 0;
+          y = Math.random() * canvas.height;
+        } else {
+          x = canvas.width;
+          y = Math.random() * canvas.height;
+        }
+        const dx = side === 'left' ? 2 : -2;
+        const dy = Math.random() * 2 - 1;
+        const enemy = {
+          x,
+          y,
+          width: 20,
+          height: 20,
+          dx,
+          dy
+        };
+        enemies.push(enemy);
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    // Function to create a new bullet
+    function createBullet(x, y, dx, dy) {
+      const bullet = {
+        x,
+        y,
+        width: 5,
+        height: 5,
+        dx,
+        dy
+      };
+      bullets.push(bullet);
+    }
+
+    // Function to check collision between two objects
+    function checkCollision(obj1, obj2) {
+      if (obj1.x < obj2.x + obj2.width &&
+          obj1.x + obj1.width > obj2.x &&
+          obj1.y < obj2.y + obj2.height &&
+          obj1.y + obj1.height > obj2.y) {
+        return true;
+      }
+      return false;
+    }
+
+    // Handle mouse click
+    canvas.addEventListener('click', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      // Calculate bullet direction
+const dx = x - player.x;
+      const dy = y - player.y;
+      const mag = Math.sqrt(dx * dx + dy * dy);
+      const dx2 = dx / mag;
+      const dy2 = dy / mag;
+
+      // Create new bullet
+      createBullet(player.x, player.y, dx2 * 5, dy2 * 5);
+    });
+
+    // Start the game
+    update();
+  </script>
+</body>
+</html>
